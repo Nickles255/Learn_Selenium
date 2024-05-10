@@ -20,7 +20,8 @@ driver.get(l_url)
 
 # %% find ID of search box
 my_id = "gcse-search-input"
-element = driver.find_element(By.ID, my_id)
+my_input= "ant-input"
+element = driver.find_element(By.CLASS_NAME, my_input)
 
 # %%send keys
 element.send_keys("Arrays")
