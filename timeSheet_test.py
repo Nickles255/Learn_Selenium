@@ -1,74 +1,127 @@
 # PROJECT TO CREATE SELENIUM
 # %%import webdriver
+# from datetime import datetime, timedelta, date
+import datetime as dt
 from selenium import webdriver
+from selenium.common import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.chrome.options import Options
+import time
+
+from hrs_calc import calc_wrkHrs
+
+in_lastName = 'Lin'
+in_FirstName = 'Chien'
+in_posnClass = '1064'
+in_supervisorEmail = "clin@ccsf.edu"
+in_submit = 'N'
+in_arrive = '8:00'
+in_outLunch = '12:00'
+in_inLunch = '12:30'
+in_leave = '16:00'
 
 l_url = 'https://citycollegesf.na1.echosign.com/'
-supervisorEmail = "clin@ccsf.edu"
 
 # %%
-driver = webdriver.Firefox()
+chrome_options = Options()
+chrome_options.add_experimental_option("detach", True)
+driver = webdriver.Chrome(options=chrome_options)
 driver.get(l_url)
 
 ## Await login
 
 # %% EXECUTE WORKFLOW BUTTON
-l_class = "spectrum-Button--secondary"
-btnLibraryStart = driver.find_element(By.CLASS_NAME, l_class)
-ActionChains(driver).double_click(btnLibraryStart).perform()
+l_pause = True
+while l_pause == True:
+    try:
+        l_class = "spectrum-Button--secondary"
+        btnLibraryStart = driver.find_element(By.CLASS_NAME, l_class)
+        ActionChains(driver).double_click(btnLibraryStart).perform()
+        l_pause = False
+    except:
+        l_pause = True
+        time.sleep(2)  ##in seconds
 
 # %% initialize time sheet workflow
-l_id = "selectFiles-view29-tab-2"
-workFlowLink = driver.find_element(By.ID, l_id)
-ActionChains(driver).click(workFlowLink).perform()
+l_pause = True
+while l_pause == True:
+    try:
+        l_class = "libraryWorkflows"
+        workFlowLink = driver.find_element(By.CLASS_NAME, l_class)
+        ActionChains(driver).click(workFlowLink).perform()
 
-l_id = "cell-title-c370"
-timeSheetLink = driver.find_element(By.ID, l_id)
-ActionChains(driver).double_click(timeSheetLink).perform()
+        l_class = 'single-select-row'
+        workFlowMenu = driver.find_elements(By.CLASS_NAME, l_class)
+        timeSheetLink = workFlowMenu[5]
+        ActionChains(driver).double_click(timeSheetLink).perform()
+        l_pause = False
+    except:
+        l_pause = True
+        time.sleep(1)  ##in seconds
 
 # %% Submit supervisor email
+time.sleep(2)
 l_class = "recipient-email-input"
 tbRecpEmail = driver.find_elements(By.CLASS_NAME, l_class)
-tbRecpEmail[1].send_keys(supervisorEmail)
-# %%
+tbRecpEmail[1].send_keys(in_supervisorEmail)
+
 l_class = "send-btn"
 btnSubmit = driver.find_element(By.CLASS_NAME, l_class)
 ActionChains(driver).double_click(btnSubmit).perform()
 
+l_workHrs, l_rwwHrs = calc_wrkHrs(in_arrive, in_outLunch,
+                                  in_inLunch, in_leave)
+
+# %% adjust to beginning saturday of 2 weeks
+# day of week is 0-monday to 6-sunday
+l_day = dt.date.today()
+l_diff = 4 - l_day.weekday()  # 4 is friday
+l_startDate = l_day + dt.timedelta(days=(l_diff - 13))
+l_startDate = l_startDate.strftime("%m/%d/%Y")
+
 # %%
-l_class = "text_field_input"
-tbInputs = driver.find_elements(By.CLASS_NAME, l_class)
+l_pause = True
+while l_pause == True:
+    try:
+        l_class = "text_field_input"
+        tbInputs = driver.find_elements(By.CLASS_NAME, l_class)
 
-# TOP INPUT
-tbLname = tbInputs[0] ##last name
-tbLname.clear()
-tbLname.send_keys('Lin')
+        # TOP INPUT
+        tbLname = tbInputs[0]  ##last name
+        tbLname.clear()
+        tbLname.send_keys(in_lastName)
 
-tbFname = tbInputs[1] ##first name
+        l_pause = False
+    except:
+        l_pause = True
+        time.sleep(1)  ##in seconds
+
+tbFname = tbInputs[1]  ##first name
 tbFname.clear()
-tbFname.send_keys('Chien')
+tbFname.send_keys(in_FirstName)
 
-tbClass = tbInputs[2] ##class number
+tbClass = tbInputs[2]  ##class number
 tbClass.clear()
-tbClass.send_keys('1064')
+tbClass.send_keys(in_posnClass)
 
 ## Each row is 8
 # %%INITIAL DATE
-tbClass = tbInputs[3] #initial date
+tbClass = tbInputs[3]  # initial date
 tbClass.clear()
-tbClass.send_keys('03/02/2024')
+keys = tbClass.send_keys(l_startDate)
 
 # %% populate box
 l_entryPoints = list(range(20, 53, 8)) + list(range(76, 109, 8))
 for i in l_entryPoints:
     print(i)
-    tbArrive    = tbInputs[i]
-    tbLunchOut  = tbInputs[i + 1]
-    tbLunchIn   = tbInputs[i + 2]
-    tbDepart    = tbInputs[i + 3]
-    tbTotalHr   = tbInputs[i + 4]
-    tbRWW       = tbInputs[i + 5]
+    tbArrive = tbInputs[i]
+    tbLunchOut = tbInputs[i + 1]
+    tbLunchIn = tbInputs[i + 2]
+    tbDepart = tbInputs[i + 3]
+    tbTotalHr = tbInputs[i + 4]
+    tbRWW = tbInputs[i + 5]
 
     tbArrive.clear()
     tbLunchOut.clear()
@@ -77,29 +130,36 @@ for i in l_entryPoints:
     tbTotalHr.clear()
     tbRWW.clear()
 
-    tbArrive.send_keys('8:00')
-    tbLunchOut.send_keys('12:00')
-    tbLunchIn.send_keys('12:30')
-    tbDepart.send_keys('16:00')
-    tbTotalHr.send_keys('7.5')
-    tbRWW.send_keys('0.5')
+    tbArrive.send_keys(in_arrive)
+    tbLunchOut.send_keys(in_outLunch)
+    tbLunchIn.send_keys(in_inLunch)
+    tbDepart.send_keys(in_leave)
+    tbTotalHr.send_keys(l_workHrs)
+    tbRWW.send_keys(l_rwwHrs)
 
 # %%
-l_class='faux_field'
+l_class = 'faux_field'
 signField = driver.find_element(By.CLASS_NAME, l_class)
 ActionChains(driver).click(signField).perform()
+# wait for form to appear
+l_pause = True
+while l_pause == True:
+    try:
+        l_class = 'apply'
+        btnApply = driver.find_element(By.CLASS_NAME, l_class)
+        ActionChains(driver).click(btnApply).perform()
+        l_class = 'click-to-esign'
+        btnEsign = driver.find_element(By.CLASS_NAME, l_class)
+        l_pause = False
+    except:
+        l_pause = True
+        time.sleep(1)  ##in seconds
 
-l_class='apply'
-btnApply = driver.find_element(By.CLASS_NAME, l_class)
-ActionChains(driver).click(btnApply).perform()
-
+if in_submit == 'Y':
+    ActionChains(driver).double_click(btnEsign).perform()
+else:
+    ActionChains(driver).click(btnEsign).perform()
 # %%
-l_class='click-to-esign'
-btnEsign = driver.find_element(By.CLASS_NAME, l_class)
-ActionChains(driver).click(btnEsign).perform()
-
-
-# %%
-t2 = tbInputs[76]
-print(t2.get_property('name'))
+# t2 = tbInputs[76]
+# print(t2.get_property('name'))
 # %%
