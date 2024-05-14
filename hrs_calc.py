@@ -20,6 +20,8 @@ def calc_wrkHrs(arrive, lunch_out, lunch_in, leave):
     l_totHrs = ((t_olun - t_arr) + (t_leav - t_ilun))
 
     wrk_hrs = l_totHrs.seconds//3600 + l_totHrs.seconds//60%60/60
-    rww_hrs = 8.0 - wrk_hrs
+    wrk_hrs = round(wrk_hrs, 2)
+    rww_hrs = round(8.0 - wrk_hrs, 2)
 
     return wrk_hrs, rww_hrs
+
